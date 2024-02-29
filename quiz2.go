@@ -1,4 +1,3 @@
-// blockchain_simple.go
 package main
 
 import (
@@ -7,58 +6,73 @@ import (
     "time"
 )
 
-// Define the structure of each block in the blockchain
-type SimpleBlock struct {
-    TimeCreated   string
-    Information   string
-    PrevBlockHash string
+type BlockStructure struct {
+    CreationTime string
+    Payload      string
+    PreviousHash string
+    BlockID      int
 }
 
-// Define the blockchain as a slice of blocks
-type SimpleBlockchain struct {
-    simpleBlocks []SimpleBlock
+type MiniBlockchain struct {
+    blocks []BlockStructure
 }
 
-// Function to create a new block given some information and the hash of the previous block
-func CreateNewBlock(info string, prevHash string) SimpleBlock {
-    return SimpleBlock{TimeCreated: time.Now().Format(time.RFC3339), Information: info, PrevBlockHash: prevHash}
+// SimpleHash simulates a hashing function for educational purposes.
+func SimpleHash(input string) string {
+    // This is a very basic "hashing" mechanism for demonstration.
+    // In real applications, you should use a cryptographic hash function.
+    return fmt.Sprintf("%x", len(input))
 }
 
-// Function to add a new block to the blockchain
-func (bc *SimpleBlockchain) AddSimpleBlock(info string) {
-    var prevHash string
-    if len(bc.simpleBlocks) > 0 {
-        prevHash = bc.simpleBlocks[len(bc.simpleBlocks)-1].PrevBlockHash
+func GenerateBlock(payload string, previousHash string, blockID int) BlockStructure {
+    block := BlockStructure{
+        CreationTime: time.Now().Format("2006-01-02 15:04:05"),
+        Payload:      payload,
+        PreviousHash: previousHash,
+        BlockID:      blockID,
     }
-    newBlock := CreateNewBlock(info, prevHash)
-    bc.simpleBlocks = append(bc.simpleBlocks, newBlock)
+    // Generate a simple hash for the PreviousHash field based on Payload
+    block.PreviousHash = SimpleHash(block.Payload + strconv.Itoa(block.BlockID))
+    return block
 }
 
-// Function to initialize the blockchain with a genesis block
-func InitializeSimpleBlockchain() *SimpleBlockchain {
-    genesisBlock := CreateNewBlock("Genesis Block", "")
-    return &SimpleBlockchain{simpleBlocks: []SimpleBlock{genesisBlock}}
+func (mbc *MiniBlockchain) AppendBlock(payload string) {
+    var previousHash string
+    var blockID int
+    if len(mbc.blocks) > 0 {
+        previousBlock := mbc.blocks[len(mbc.blocks)-1]
+        previousHash = previousBlock.PreviousHash
+        blockID = previousBlock.BlockID + 1
+    } else {
+        previousHash = "0"
+        blockID = 1
+    }
+    newBlock := GenerateBlock(payload, previousHash, blockID)
+    mbc.blocks = append(mbc.blocks, newBlock)
 }
 
-// Function to display the contents of the blockchain
-func (bc *SimpleBlockchain) DisplaySimpleBlockchain() {
-    for i, block := range bc.simpleBlocks {
-        fmt.Printf("Block #%d\n", i)
-        fmt.Printf("Created: %s\n", block.TimeCreated)
-        fmt.Printf("Information: %s\n", block.Information)
-        fmt.Printf("Prev. Hash: %s\n\n", block.PrevBlockHash)
+func InitBlockchain() *MiniBlockchain {
+    genesisBlock := GenerateBlock("Start of Chain", "0", 0)
+    return &MiniBlockchain{blocks: []BlockStructure{genesisBlock}}
+}
+
+func (mbc *MiniBlockchain) ShowBlockchain() {
+    for _, block := range mbc.blocks {
+        fmt.Println("---------------")
+        fmt.Printf("Block ID: %d\n", block.BlockID)
+        fmt.Printf("Creation Time: %s\n", block.CreationTime)
+        fmt.Printf("Payload: %s\n", block.Payload)
+        fmt.Printf("Previous Hash: %s\n", block.PreviousHash)
+        fmt.Println("---------------\n")
     }
 }
 
 func main() {
-    // Initialize the blockchain with a genesis block
-    myBlockchain := InitializeSimpleBlockchain()
-    
-    // Add some blocks with dummy information
-    myBlockchain.AddSimpleBlock("First Block after Genesis")
-    myBlockchain.AddSimpleBlock("Second Block after Genesis")
-    myBlockchain.AddSimpleBlock("Third Block after Genesis")
-    
-    // Display the blockchain
-    myBlockchain.DisplaySimpleBlockchain()
+    bc := InitBlockchain()
+
+    bc.AppendBlock("First real transaction")
+    bc.AppendBlock("Second real transaction")
+    bc.AppendBlock("Third real transaction")
+
+    bc.ShowBlockchain()
 }
